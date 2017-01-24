@@ -1,0 +1,6 @@
+import numpy as np
+import plt.pyplot as plt
+
+data = np.readtxt('random.dat');
+
+plt.hist(data);
