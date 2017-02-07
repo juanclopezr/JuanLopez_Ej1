@@ -22,12 +22,16 @@ int main(void)
 	x1 = m/2 + l/(h*2) - 1;
 	y0 = m/2 - d/(h*2) - 1;
 	y1 = m/2 + d/(h*2) - 1;
-	
-	double *V = malloc(m*m*sizeof(double));
-	
-	V = init(x0, x1, y0, y1, V);
 
 	MPI_Init(NULL, NULL);
+	
+	double *V = (double *)malloc(m*m*sizeof(double));
+	assert(V != NULL);
+	
+	V = init(x0, x1, y0, y1, V);
+	
+	double *v = (double *)malloc(64*sizeof(double));
+	assert(v != NULL);
 
 	int world_rank;
 	MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
