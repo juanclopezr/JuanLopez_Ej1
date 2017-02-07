@@ -41,7 +41,7 @@ int main(void)
 	double *v = (double *)malloc(num_ele_proc*sizeof(double));
 	assert(v != NULL);
 
-	MPI_Scatter(V, num_ele_proc, MPI_DOUBLE, c, num_ele_proc, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	MPI_Scatter(V, num_ele_proc, MPI_DOUBLE, v, num_ele_proc, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	
 	while (n < N)
 	{		
