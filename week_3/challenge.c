@@ -29,14 +29,19 @@ int main(void)
 	assert(V != NULL);
 	
 	V = init(x0, x1, y0, y1, V);
-	
-	double *v = (double *)malloc(64*sizeof(double));
-	assert(v != NULL);
 
 	int world_rank;
 	MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 	int world_size;
 	MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+
+	int num_ele_proc = (int)(256/world_size);
+
+		
+	double *v = (double *)malloc(num_ele_proc*sizeof(double));
+	assert(v != NULL);
+
+	MPI_Scatter(V, num_ele_proc, MPI_DOUBLE, c, num_ele_proc, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	
 	while (n < N)
 	{		
