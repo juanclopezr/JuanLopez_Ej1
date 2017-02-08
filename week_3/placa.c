@@ -65,7 +65,8 @@ int main(void)
         }
         
         /*
-         * ENVIO DE FRONTERAS 
+         * ENVIO DE FRONTERAS
+	 Creo que es posible que las fronteras se actualicen antes de ser enviadas, preferiría enviar una copia y recibir en las variables front, o enviar las variables front y recibir en una copia.
          * */
         if (rank == 0)
         {
@@ -87,6 +88,7 @@ int main(void)
         for(k = 0; k < m; k++)
         {
             //asignar las fronteras al potencial
+	  //Creo que está bien
             V[transformer(m_y*rank, k)] = front_1[k];
             V[transformer(m_y*(rank +1), k)] = front_2[k];
         }
