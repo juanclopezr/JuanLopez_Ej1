@@ -60,7 +60,7 @@ int main(void)
         for(k = 0; k < m; k++)
         {
             // asignar los valores a enviar de frontera
-            front_1[k] = V[transformer(m_y*rank, k)];
+	  front_1[k] = V[transformer(m_y*rank, k)];//Esta debería ser la opción
             front_1[k] = V[transformer(m_y*(rank +1), k)];
         }
         
