@@ -16,15 +16,17 @@ int main(void)
     MPI_Init(NULL, NULL);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
-    MPI_Request send_request, recv_request;
-    MPI_Status status;
+//    printf("%d %d\n", size, rank);
+    
+    //MPI_Request send_request, recv_request;
+    //MPI_Status status;
     
 	int up, down, left, right, j=1, k = 0, n = 0;
-    int x0, x1, y0, y1, N, i;
+    int x0, x1, y0, y1, N, i, until;
     double average, h = (double)L/m;
 	
     m_y = m/size;
-    N = 1000;//2*m*m_y;
+    N = 2*m*m_y;
     max_range = m_y*(rank + 1);
     min_range = m_y*(rank);
         
@@ -33,125 +35,87 @@ int main(void)
 	y0 = m/2 - d/(h*2) - 1;
 	y1 = m/2 + d/(h*2) - 1;
     
-    double *V = malloc((m*m_y+1)*sizeof(double));
+    
+    
+    double *V = malloc(m*(m_y+1)*sizeof(double));
+    double *buffer_1 = malloc(m*sizeof(double));
+    double *buffer_2 = malloc(m*sizeof(double));
     double *front_1 = malloc(m*sizeof(double));
     double *front_2 = malloc(m*sizeof(double));
-    double *buff_1 = malloc(m*sizeof(double));
-    double *buff_2 = malloc(m*sizeof(double));
     V = init(x0, x1, y0, y1, V);
 
     while (n < N)
-    {		
-        for(i=m_y*rank; i < (rank+1)*m_y; i++)
+    {	
+        i = m_y*rank + 1;
+        until = (rank + 1)*m_y;
+        for(i ; i < until; i++)
         {
-            for(j=1;j < m; j++)
+            for(j=1;j < m-1; j++)
             {
                 up = transformer(i-1, j);
                 down = transformer(i+1, j);
                 left = transformer(i, j-1);
                 right = transformer(i, j+1);
-		if(rank==0)
-		  {
-		    if(i==0)
-		      {
-			average = 0;
-			V[transformer(i,j)] = average;
-		      }
-		    else if(i==m_y*(rank+1)-1 && i!=m)
-		      {
-			average = (V[up] + V[left] + V[right] + buff_2[j]);
-			V[transformer(i,j)] = average;
-		      }
-		    else
-		      {
-			if (!(j >= x0 && j <= x1 && i == y0) && !(j >= x0 && j <= x1 && i == y1))
-			  {
-			    average = (V[up] + V[down] + V[left] + V[right])/4;
-			    V[transformer(i,j)] = average;
-			  }
-		      }
-		  }
-		else if(rank==size-1)
-		  {
-		    if(i==m)
-		      {
-			average = 0;
-			V[transformer(i,j)] = average;
-		      }
-		    else if(i==m_y*rank && i!=0)
-		      {
-			average = (V[down] + V[left] + V[right] + buff_1[j])/4;
-			V[transformer(i,j)] = average;
-		      }
-		    else
-		      {
-			if (!(j >= x0 && j <= x1 && i == y0) && !(j >= x0 && j <= x1 && i == y1))
-			  {
-			    average = (V[up] + V[down] + V[left] + V[right])/4;
-			    V[transformer(i,j)] = average;
-			  }
-		      }
-		  }
-		else
-		  {
-		    if(i==m_y*rank)
-		      {
-			average = (V[down] + V[left] + V[right] + buff_1[j])/4;
-			V[transformer(i,j)] = average;
-		      }
-		    else if(i==m_y*(rank+1)-1)
-		      {
-			average = (V[up] + V[down] + V[left] + V[right])/4;
-			V[transformer(i,j)] = average;
-		      }
-		    else
-		      {
-			if (!(j >= x0 && j <= x1 && i == y0) && !(j >= x0 && j <= x1 && i == y1))
-			  {
-			    average = (V[up] + V[down] + V[left] + V[right])/4;
-			    V[transformer(i,j)] = average;
-			  }
-		      }
-		  }
-	    }
-	}
-	
+                if (!(j >= x0 && j <= x1 && i == y0) && !(j >= x0 && j <= x1 && i == y1))
+                {
+                    average = (V[up] + V[down] + V[left] + V[right])/4;
+                    V[transformer(i,j)] = average;
+                }
+            }
+        }
         n += 1;
         
-        for(k = 0; k < m; k++)
-        {
-            // asignar los valores a enviar de frontera
-	    front_1[k] = V[transformer(m_y*rank, k)];
-            front_2[k] = V[transformer(m_y*(rank +1), k)];
+        if(rank == 0)
+        {        
+            for(k = 0; k < m; k++)
+            {
+                // asignar los valores a enviar de frontera
+                front_2[k] = V[transformer(until-1, k)];
+            }
         }
-        
-        /*
-         * ENVIO DE FRONTERAS
-	 Creo que es posible que las fronteras se actualicen antes de ser enviadas, preferiría enviar una copia y recibir en las variables front, o enviar las variables front y recibir en una copia.
-         * */
-        if (rank == 0)
-        {
-            MPI_Irecv(buff_2, m, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, &recv_request);
-            MPI_Isend(front_2, m, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, &send_request);
-        }
-        else if (rank == size-1)
-        {
-            MPI_Irecv(buff_1, m, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, &recv_request);
-            MPI_Isend(front_1, m, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, &send_request);
+        if(rank == size - 1)
+        {        
+            for(k = 0; k < m; k++)
+            {
+                // asignar los valores a enviar de frontera
+                front_1[k] = V[transformer(m_y*rank+1, k)];
+            }
         }
         else
         {
-            MPI_Irecv(buff_1, m, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, &recv_request);
-            MPI_Isend(front_1, m, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, &send_request);
-            MPI_Irecv(buff_2, m, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, &recv_request);
-            MPI_Isend(front_2, m, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, &send_request);
+            for(k = 0; k < m; k++)
+            {
+                front_1[k] = V[transformer(m_y*rank+1, k)];
+                front_2[k] = V[transformer(until-1, k)];
+            }
+        }
+        
+        /*
+         * ENVIO DE FRONTERAS 
+         * */
+        if (rank == 0)
+        {
+            MPI_Send(front_2, m, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD);
+            MPI_Recv(buffer_2, m, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        }
+        else if(rank == size - 1)
+        {
+            MPI_Recv(buffer_1, m, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Send(front_1, m, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD);
+        }
+        else
+        {
+            MPI_Recv(buffer_1, m, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Send(front_1, m, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD);
+            MPI_Send(front_2, m, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD);
+            MPI_Recv(buffer_2, m, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            
         }
         for(k = 0; k < m; k++)
         {
             //asignar las fronteras al potencial
-	  //Creo que está bien
-            V[transformer(m_y*rank, k)] = buff_1[k];
-            V[transformer(m_y*(rank +1), k)] = buff_2[k];
+            V[transformer(m_y*rank, k)] = buffer_1[k];
+            V[transformer(until, k)] = buffer_2[k];
         }
     }
 	
