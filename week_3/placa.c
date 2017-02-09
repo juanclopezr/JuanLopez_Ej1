@@ -36,6 +36,8 @@ int main(void)
     double *V = malloc((m*m_y+1)*sizeof(double));
     double *front_1 = malloc(m*sizeof(double));
     double *front_2 = malloc(m*sizeof(double));
+    double *buff_1 = malloc(m*sizeof(double));
+    double *buff_2 = malloc(m*sizeof(double));
     V = init(x0, x1, y0, y1, V);
 
     while (n < N)
@@ -60,8 +62,8 @@ int main(void)
         for(k = 0; k < m; k++)
         {
             // asignar los valores a enviar de frontera
-	  front_1[k] = V[transformer(m_y*rank, k)];//Esta debería ser la opción
-            front_1[k] = V[transformer(m_y*(rank +1), k)];
+	    front_1[k] = V[transformer(m_y*rank, k)];
+            front_2[k] = V[transformer(m_y*(rank +1), k)];
         }
         
         /*
@@ -70,27 +72,27 @@ int main(void)
          * */
         if (rank == 0)
         {
-            MPI_Irecv(front_2, m, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, &recv_request);
+            MPI_Irecv(buff_2, m, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, &recv_request);
             MPI_Isend(front_2, m, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, &send_request);
         }
         else if (rank == size-1)
         {
-            MPI_Irecv(front_1, m, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, &recv_request);
+            MPI_Irecv(buff_1, m, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, &recv_request);
             MPI_Isend(front_1, m, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, &send_request);
         }
         else
         {
-            MPI_Irecv(front_1, m, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, &recv_request);
+            MPI_Irecv(buff_1, m, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, &recv_request);
             MPI_Isend(front_1, m, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, &send_request);
-            MPI_Irecv(front_2, m, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, &recv_request);
+            MPI_Irecv(buff_2, m, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, &recv_request);
             MPI_Isend(front_2, m, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, &send_request);
         }
         for(k = 0; k < m; k++)
         {
             //asignar las fronteras al potencial
 	  //Creo que está bien
-            V[transformer(m_y*rank, k)] = front_1[k];
-            V[transformer(m_y*(rank +1), k)] = front_2[k];
+            V[transformer(m_y*rank, k)] = buff_1[k];
+            V[transformer(m_y*(rank +1), k)] = buff_2[k];
         }
     }
 	
