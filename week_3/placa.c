@@ -42,21 +42,80 @@ int main(void)
 
     while (n < N)
     {		
-        for(i=m_y*rank + 1; i < (rank+1)*m_y-1; i++)
+        for(i=m_y*rank; i < (rank+1)*m_y; i++)
         {
-            for(j=1;j < m-1; j++)
+            for(j=1;j < m; j++)
             {
                 up = transformer(i-1, j);
                 down = transformer(i+1, j);
                 left = transformer(i, j-1);
                 right = transformer(i, j+1);
-                if (!(j >= x0 && j <= x1 && i == y0) && !(j >= x0 && j <= x1 && i == y1))
-                {
-                    average = (V[up] + V[down] + V[left] + V[right])/4;
-                    V[transformer(i,j)] = average;
-                }
-            }
-        }
+		if(rank==0)
+		  {
+		    if(i==0)
+		      {
+			average = 0;
+			V[transformer(i,j)] = average;
+		      }
+		    else if(i==m_y*(rank+1)-1 && i!=m)
+		      {
+			average = (V[up] + V[left] + V[right] + buff_2[j]);
+			V[transformer(i,j)] = average;
+		      }
+		    else
+		      {
+			if (!(j >= x0 && j <= x1 && i == y0) && !(j >= x0 && j <= x1 && i == y1))
+			  {
+			    average = (V[up] + V[down] + V[left] + V[right])/4;
+			    V[transformer(i,j)] = average;
+			  }
+		      }
+		  }
+		else if(rank==size-1)
+		  {
+		    if(i==m)
+		      {
+			average = 0;
+			V[transformer(i,j)] = average;
+		      }
+		    else if(i==m_y*rank && i!=0)
+		      {
+			average = (V[down] + V[left] + V[right] + buff_1[j])/4;
+			V[transformer(i,j)] = average;
+		      }
+		    else
+		      {
+			if (!(j >= x0 && j <= x1 && i == y0) && !(j >= x0 && j <= x1 && i == y1))
+			  {
+			    average = (V[up] + V[down] + V[left] + V[right])/4;
+			    V[transformer(i,j)] = average;
+			  }
+		      }
+		  }
+		else
+		  {
+		    if(i==m_y*rank)
+		      {
+			average = (V[down] + V[left] + V[right] + buff_1[j])/4;
+			V[transformer(i,j)] = average;
+		      }
+		    else if(i==m_y*(rank+1)-1)
+		      {
+			average = (V[up] + V[down] + V[left] + V[right])/4;
+			V[transformer(i,j)] = average;
+		      }
+		    else
+		      {
+			if (!(j >= x0 && j <= x1 && i == y0) && !(j >= x0 && j <= x1 && i == y1))
+			  {
+			    average = (V[up] + V[down] + V[left] + V[right])/4;
+			    V[transformer(i,j)] = average;
+			  }
+		      }
+		  }
+	    }
+	}
+	
         n += 1;
         
         for(k = 0; k < m; k++)
