@@ -23,7 +23,7 @@ int main(void)
     
 	int up, down, left, right, j=1, k = 0, n = 0;
     int x0, x1, y0, y1, N, i, until;
-    double average, h = (double)L/m;
+    double average, der, h = (double)L/m;
 	
     m_y = m/size;
     N = 2*m*m_y;
@@ -126,17 +126,71 @@ int main(void)
     }
       
     MPI_Gather(V, m*m_y, MPI_DOUBLE, complete, m*m_y, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-
-    if(rank == 0)
+    if(rank==0)
+      {
+    int sizes = 256;
+    FILE *f = fopen("potential.dat","w");
+  for(i=0;i<sizes;i++)
     {
-        for(i=0; i < m; i++)
-        {
-            for(j=0; j < m; j++)
-            {
-                printf("%f\n", complete[i*m + j]);
-            }
-        }
+      for(j=0;j<sizes;j++)
+	{
+	  fprintf(f,"%f ",complete[sizes*i+j]);
+	}
+      fprintf(f,"\n");
     }
+  fclose(f);
+
+  FILE *fieldx = fopen("fieldx.dat","w");
+  for(i=0;i<sizes;i++)
+    {
+      for(j=0;j<sizes;j++)
+	{
+	  if(j==0)
+	    {
+	      der = -(complete[sizes*i+j+1]-complete[sizes*i+j])/h;
+	      fprintf(fieldx,"%f ",der);
+	    }
+	  else if(j==size-1)
+	    {
+	      der = -(complete[sizes*i+j]-complete[sizes*i+j-1])/h;
+	      fprintf(fieldx,"%f ",der);
+	    }
+	  else
+	    {
+	      der = -(complete[sizes*i+j+1]-complete[sizes*i+j-1])/(2.0*h);
+	      fprintf(fieldx,"%f ",der);
+	    }
+	}
+      fprintf(fieldx,"\n");
+    }
+  fclose(fieldx);
+
+  FILE *fieldy = fopen("fieldy.dat","w");
+  for(i=0;i<sizes;i++)
+    {
+      for(j=0;j<sizes;j++)
+	{
+	  if(i==0)
+	    {
+	      der = (complete[sizes*(i+1)+j]-complete[sizes*i+j])/h;
+	      fprintf(fieldy,"%f ",der);
+	    }
+	  else if(i==size-1)
+	    {
+	      der = (complete[sizes*i+j]-complete[sizes*(i-1)+j])/h;
+	      fprintf(fieldy,"%f ",der);
+	    }
+	  else
+	    {
+	      der = (complete[sizes*(i+1)+j]-complete[sizes*(i-1)+j])/(2.0*h);
+	      fprintf(fieldy,"%f ",der);
+	    }
+	}
+      fprintf(fieldy,"\n");
+    }
+    fclose(fieldy);
+      }
+
     MPI_Finalize();    
 }
 
