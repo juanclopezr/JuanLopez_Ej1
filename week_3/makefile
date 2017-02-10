@@ -1,9 +1,9 @@
-v.png: plotter.py output.txt
-	python plotter.py
-	rm -f output.txt placas a.out
+placas.pdf : grafica.py potential.dat fieldx.dat fieldy.dat
+	python grafica.py
+	rm -f potential.dat fieldx.dat fieldy.dat a.out
 
-output.txt : a.out 
-	mpiexec -np 4 ./a.out > output.txt
+sub : a.out
+	qsub submit.sh
 
-a.out : placa.c
-	mpicc placa.c
+a.out : placas.c
+	mpicc placas.c
