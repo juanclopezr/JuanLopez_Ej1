@@ -3,7 +3,7 @@ placas.pdf : grafica.py potential.dat fieldx.dat fieldy.dat
 	rm -f potential.dat fieldx.dat fieldy.dat a.out
 
 sub : a.out
-	qsub submit.sh
+	qsub -W block=true submit.sh
 
 a.out : placas.c
 	mpicc placas.c
